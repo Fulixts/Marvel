@@ -1,0 +1,107 @@
+﻿@model IEnumerable<Marvel.Models.Character>
+
+@{
+    ViewData["Title"] = "Heroes";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    Pager pager = new Pager();
+
+    int pageNo = 0;
+
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+</head>
+<body>
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <h1>Heroes</h1>
+                <div class="search-single">
+                    @using (Html.BeginForm("SingleCharacter", "Characters", FormMethod.Get))
+                    {
+                        <input type="text" name="nameCharacter" placeholder="Search" />
+                        <input type="submit" value="Submit" />
+                    }
+                    <div class="p">
+                        <p>Only 5 Characters can be Favorite</p>
+                        <p>If you Favorite with more than 5 he will disregard and not mark as Favorite</p>
+                    </div>
+                </div>
+                <table class="table" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>
+                                @*@Html.DisplayNameFor(model => model.Id)*@
+                                @Html.ActionLink("Id", "Index","Characters", new {SortOrder = ViewBag.Id})
+                            </th>
+                            <th>
+                                @Html.ActionLink("Name", "Index","Characters", new {SortOrder = ViewBag.Name})
+                            </th>
+                            <th>
+                                @Html.ActionLink("Favorite", "Index","Characters", new {SortOrder = ViewBag.Favorite})
+                            </th>
+                            <th>
+                                Options
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Id)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Name)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Favorite)
+                                </td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                                    <a asp-action="Details" asp-route-id="@item.Id">Details</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="container">
+                    @if (pager.TotalPages > 0)
+                    {
+                        <ul class="pagination justify-content-end">
+                            @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                            {
+                                <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                    <a class="page-link" asp-controller="Characters" asp-action="Index" asp-route-pg="@pge">@pge</a>
+                                </li>
+                            }
+
+                            @if (pager.CurrentPage < pager.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" asp-controller="Characters" asp-action="Index" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" asp-controller="Characters" asp-action="Index" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

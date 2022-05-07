@@ -1,0 +1,41 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.p {
+    height: 100%;
+    margin-left: 10%;
+    padding: 1%;
+    border: 2px solid red;
+    background-color: rgba(255,0,0,0.2);
+}
+
+.search-single {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+    justify-content: space-around;
+}
+.table {
+    text-align: center;
+}

@@ -23,26 +23,53 @@ public class CharactersController : Controller
 
     // GET: Characters
     [HttpGet]
-    public async Task<IActionResult> Index(int pg = 1)
+    public async Task<IActionResult> Index(string? SortOrder, int pg = 1)
     {
         const int pgSize = 10;
         int recsCount;
         int recSkip;
 
+        ViewBag.Id = String.IsNullOrEmpty(SortOrder) ? "Id_desc" : "";
+        ViewBag.Name = SortOrder == "Name" ? "Name_desc" : "Name";
+        ViewBag.Favorite = SortOrder == "Favorite" ? "Favorite_desc" : "Favorite";
+
+        if (pg < 1)
+        {
+            pg = 1;
+        }
+
+        recSkip = (pg - 1) * pgSize;
+
         if (_service.validateDb())
         {
             var result = await _context.characterContext.ToListAsync();
 
-            if (pg < 1)
+            switch (SortOrder)
             {
-                pg = 1;
+                case "Id_desc":
+                    result = result.OrderByDescending(c => c.Id).ToList();
+                    break;
+                case "Name":
+                    result = result.OrderBy(c => c.Name).ToList();
+                    break;
+                case "Name_desc":
+                    result = result.OrderByDescending(c => c.Name).ToList();
+                    break;
+                case "Favorite":
+                    result = result.OrderByDescending(c => c.Favorite).ToList();
+                    break;
+                case "Favorite_desc":
+                    result = result.OrderBy(c => c.Favorite).ToList();
+                    break;
+                default:
+                    result = result.OrderBy(c => c.Id).ToList();
+                    break;
             }
 
             recsCount = result.Count();
 
             var pager = new Pager(recsCount, pg, pgSize);
 
-            recSkip = (pg - 1) * pgSize;
             var data = result.Skip(recSkip).Take(pager.PageSize).ToList();
 
             this.ViewBag.Pager = pager;
@@ -53,21 +80,17 @@ public class CharactersController : Controller
         {
             var result = await _service.GetCharacters();
 
+            result = result.OrderBy(c => c.Name).ToList();
+
             foreach (var character in result)
             {
                 _service.SaveToDb(character);
-            }
-
-            if (pg < 1)
-            {
-                pg = 1;
             }
 
             recsCount = result.Count();
 
             var pager = new Pager(recsCount, pg, pgSize);
 
-            recSkip = (pg - 1) * pgSize;
             var data = result.Skip(recSkip).Take(pager.PageSize).ToList();
 
             this.ViewBag.Pager = pager;
@@ -153,6 +176,16 @@ public class CharactersController : Controller
         {
             return NotFound();
         }
+
+        if (character.Favorite == true && !_service.ValidateFavorite())
+        {
+            character.Favorite = true;
+        }
+        else
+        {
+            character.Favorite = false;
+        }
+
         try
         {
             _context.Update(character);

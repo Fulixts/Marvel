@@ -151,6 +151,25 @@ public class Service : IService
         return response;
     }
 
+    public bool ValidateFavorite()
+    {
+        var sqlCommand = _context.characterContext.CreateDbCommand();
+
+        sqlCommand.CommandText = "SELECT COUNT(*) from [Characters].[dbo].[characterContext] WHERE Favorite=1";
+
+        sqlCommand.Connection.ConnectionString = _config.GetConnectionString("defaultConnection");
+
+        sqlCommand.Connection.Open();
+
+        int validate = int.Parse(sqlCommand.ExecuteScalar().ToString());
+
+        sqlCommand.Connection.Close();
+
+        var response = validate >= 5 ? true : false;
+
+        return response;
+    }
+
     public bool CharacterExists(int id)
     {
         return _context.characterContext.Any(e => e.Id == id);

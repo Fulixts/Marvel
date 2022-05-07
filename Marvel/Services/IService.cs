@@ -10,4 +10,5 @@ public interface IService
     bool validateDb();
     bool CharacterExists(int id);
     bool CharacterExists(string name);
+    bool ValidateFavorite();
 }
