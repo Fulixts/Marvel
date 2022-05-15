@@ -1,19 +1,23 @@
-﻿@model IEnumerable<Marvel.Models.Character>
+﻿@using Tools.Models;
+@model IEnumerable<Marvel.Models.Character>
 
 @{
     ViewData["Title"] = "Heroes";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    SortModel sort = (SortModel)ViewData["sort"];
 
-    Pager pager = new Pager();
-
-    int pageNo = 0;
-
-    if (ViewBag.Pager != null)
-    {
-        pager = ViewBag.Pager;
-        pageNo = pager.CurrentPage;
-    }
+    PagerModel pager = ViewBag.Pager;
 }
+
+<style>
+    #botBar {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: baseline;
+        justify-content: center;
+    }
+</style>
 
 <!DOCTYPE html>
 
@@ -28,9 +32,9 @@
             <div class="table-responsive">
                 <h1>Heroes</h1>
                 <div class="search-single">
-                    @using (Html.BeginForm("SingleCharacter", "Characters", FormMethod.Get))
+                    @using (Html.BeginForm("GetCharacter", "Characters", FormMethod.Get))
                     {
-                        <input type="text" name="nameCharacter" placeholder="Search" />
+                        <input type="text" name="GetCharacter" placeholder="Search" />
                         <input type="submit" value="Submit" />
                     }
                     <div class="p">
@@ -42,14 +46,22 @@
                     <thead>
                         <tr>
                             <th>
-                                @*@Html.DisplayNameFor(model => model.Id)*@
-                                @Html.ActionLink("Id", "Index","Characters", new {SortOrder = ViewBag.Id})
+                                <a asp-action="Index" asp-route-sortExpression="@sort.GetColumn("id").SortExpression">
+                                    @Html.DisplayNameFor(model => model.Id)
+                                </a>
+                                <i class="@sort.GetColumn("id").SortIcon" arial-hidden="true"></i>
                             </th>
                             <th>
-                                @Html.ActionLink("Name", "Index","Characters", new {SortOrder = ViewBag.Name})
+                                <a asp-action="Index" asp-route-sortExpression="@sort.GetColumn("name").SortExpression">
+                                    @Html.DisplayNameFor(model => model.Name)
+                                </a>
+                                <i class="@sort.GetColumn("name").SortIcon" arial-hidden="true"></i>
                             </th>
                             <th>
-                                @Html.ActionLink("Favorite", "Index","Characters", new {SortOrder = ViewBag.Favorite})
+                                <a asp-action="Index" asp-route-sortExpression="@sort.GetColumn("favorite").SortExpression">
+                                    @Html.DisplayNameFor(model => model.Favorite)
+                                </a>
+                                <i class="@sort.GetColumn("favorite").SortIcon" arial-hidden="true"></i>
                             </th>
                             <th>
                                 Options
@@ -77,29 +89,12 @@
                         }
                     </tbody>
                 </table>
-                <div class="container">
-                    @if (pager.TotalPages > 0)
-                    {
-                        <ul class="pagination justify-content-end">
-                            @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
-                            {
-                                <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
-                                    <a class="page-link" asp-controller="Characters" asp-action="Index" asp-route-pg="@pge">@pge</a>
-                                </li>
-                            }
-
-                            @if (pager.CurrentPage < pager.TotalPages)
-                            {
-                                <li class="page-item">
-                                    <a class="page-link" asp-controller="Characters" asp-action="Index" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" asp-controller="Characters" asp-action="Index" asp-route-pg="@(pager.TotalPages)">Last</a>
-                                </li>
-                            }
-                        </ul>
-                    }
-                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12" id="botBar">
+                <partial name="_showItems" model="@pager" />
+                <partial name="_pagerBar" model="@pager" />
             </div>
         </div>
     </div>

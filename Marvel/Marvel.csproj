@@ -10,7 +10,7 @@
     <None Include="Views\Characters\Details.cshtml" />
     <None Include="Views\Characters\Edit.cshtml" />
     <None Include="Views\Characters\Index.cshtml" />
-    <None Include="Views\Characters\SingleCharacter.cshtml" />
+    <None Include="Views\Characters\GetCharacter.cshtml" />
     <None Include="Views\Home\Index.cshtml" />
     <None Include="Views\Home\Privacy.cshtml" />
     <None Include="Views\Shared\Error.cshtml" />
@@ -38,6 +38,10 @@
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.3" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Tools\Tools.csproj" />
 	</ItemGroup>
 
 </Project>

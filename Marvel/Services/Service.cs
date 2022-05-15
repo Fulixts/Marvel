@@ -4,14 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
+using Tools.Models;
 
 namespace Marvel.Services;
 
 public class Service : IService
 {
     private const string BASE_URL = "http://gateway.marvel.com/v1/public";
-    private readonly string _publicKey = "e111d19556dfac80b319b6e74ab4df6f";
-    private readonly string _privateKey = "0751e452b72ce12ceb5a9f8129405a521e17339b";
     private static HttpClient _client = new HttpClient();
     private readonly DataContext _context;
     private readonly IConfiguration _config;
@@ -26,8 +25,20 @@ public class Service : IService
         _config = configuration;
     }
 
-    public async Task<List<Character>> GetCharacters()
+    public async Task<PaginatedList<Character>> GetCharacters(string SortProperty, OrderBy orderBy, int pageIndex = 1, int pageSize = 10)
     {
+        PaginatedList<Character> retCharacters;
+
+        if (validateDb())
+        {
+            List<Character> characters = await _context.characterContext.ToListAsync();
+
+            characters = DoSort(characters, SortProperty, orderBy);
+
+             retCharacters = new PaginatedList<Character>(characters, pageIndex, pageSize);
+
+            return retCharacters;
+        }
         string requestURL = RequestUrl();
 
         var url = new Uri(requestURL);
@@ -43,12 +54,19 @@ public class Service : IService
 
         CharacterDataWrapper cdw = JsonConvert.DeserializeObject<CharacterDataWrapper>(json);
 
-        return cdw.Data.Results;
+        foreach (var character in cdw.Data.Results)
+        {
+            character.Image = $"{character.Thumbnail.Path}.{character.Thumbnail.Extension}";
+            SaveToDb(character);
+        }
+        retCharacters = new PaginatedList<Character>(cdw.Data.Results, pageIndex, pageSize);
+
+        return retCharacters;
     }
 
-    public async Task<List<Character>> GetCharacters(string nameCharacter)
+    public async Task<List<Character>> GetCharacters(string name)
     {
-        string requestURL = RequestUrl(nameCharacter);
+        string requestURL = RequestUrl(name);
 
         var url = new Uri(requestURL);
 
@@ -67,11 +85,64 @@ public class Service : IService
 
         result = new List<Character> { result.FirstOrDefault() };
 
+        if (result[0] == null)
+        {
+            return null;
+        }
+
+        foreach (var character in result)
+        {
+            character.Image = $"{character.Thumbnail.Path}.{character.Thumbnail.Extension}";
+            SaveToDb(character);
+        }
+
         return result;
+    }
+
+    private List<Character> DoSort(List<Character> characters, string SortProperty, OrderBy orderBy)
+    {
+        if (SortProperty.ToLower() == "id")
+        {
+            if (orderBy == OrderBy.Ascending)
+            {
+                characters = characters.OrderBy(c => c.Id).ToList();
+            }
+            else
+            {
+                characters = characters.OrderByDescending(c => c.Id).ToList();
+            }
+        }
+        else if (SortProperty.ToLower() == "name")
+        {
+            if (orderBy == OrderBy.Ascending)
+            {
+                characters = characters.OrderBy(c => c.Name).ToList();
+            }
+            else
+            {
+                characters = characters.OrderByDescending(c => c.Name).ToList();
+            }
+        }
+        else
+        {
+            if (orderBy == OrderBy.Ascending)
+            {
+                characters = characters.OrderByDescending(c => c.Favorite).ThenBy(c => c.Name).ToList();
+            }
+            else
+            {
+                characters = characters.OrderBy(c => c.Favorite).ThenByDescending(c => c.Name).ToList();
+            }
+        }
+        return characters;
     }
 
     private string RequestUrl()
     {
+        string _privateKey = _config.GetSection("privateKey").Value;
+
+        string _publicKey = _config.GetSection("publicKey").Value;
+
         string timestamp = (DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1)).TotalSeconds.ToString();
 
         string s = $"{timestamp}{_privateKey}{_publicKey}";
@@ -85,19 +156,13 @@ public class Service : IService
         return requestURL;
     }
 
-    private string RequestUrl(string nameCharacter)
+    private string RequestUrl(string name)
     {
-        string timestamp = (DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1)).TotalSeconds.ToString();
+        string requestURL = RequestUrl();
 
-        string s = $"{timestamp}{_privateKey}{_publicKey}";
+        var response = $"{requestURL}&name={name}";
 
-        string hash = CreateHash(s);
-
-        string requestURL;
-
-        requestURL = $"{BASE_URL}/characters?name={nameCharacter}&ts={timestamp}&apikey={_publicKey}&hash={hash}";
-
-        return requestURL;
+        return response;
     }
 
     private string CreateHash(string input)

@@ -22,7 +22,7 @@ namespace Marvel.Migrations
             modelBuilder.Entity("Marvel.Models.Character", b =>
                 {
                     b.Property<int>("Id")
-                        .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -31,6 +31,10 @@ namespace Marvel.Migrations
 
                     b.Property<bool>("Favorite")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Image")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Modified")
                         .IsRequired()

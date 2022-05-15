@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Marvel.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20220505054752_initial")]
-    partial class initial
+    [Migration("20220512195702_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -37,6 +37,10 @@ namespace Marvel.Migrations
 
                     b.Property<bool>("Favorite")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Image")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Modified")
                         .IsRequired()

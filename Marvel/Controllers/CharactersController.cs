@@ -5,6 +5,7 @@ using Marvel.Models;
 using Marvel.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Tools.Models;
 
 namespace Marvel.Controllers;
 
@@ -23,93 +24,35 @@ public class CharactersController : Controller
 
     // GET: Characters
     [HttpGet]
-    public async Task<IActionResult> Index(string? SortOrder, int pg = 1)
+    public async Task<IActionResult> Index(string sortExpression = "", int page = 1, int pageSize = 5)
     {
-        const int pgSize = 10;
-        int recsCount;
-        int recSkip;
+        SortModel sort = new SortModel();
+        sort.AddColumn("id");
+        sort.AddColumn("name");
+        sort.AddColumn("favorite");
+        sort.ApplySort(sortExpression);
+        ViewData["sort"] = sort;
 
-        ViewBag.Id = String.IsNullOrEmpty(SortOrder) ? "Id_desc" : "";
-        ViewBag.Name = SortOrder == "Name" ? "Name_desc" : "Name";
-        ViewBag.Favorite = SortOrder == "Favorite" ? "Favorite_desc" : "Favorite";
+        PaginatedList<Character> characters = await _service.GetCharacters(sort.SortProperty, sort.OrderBy, page, pageSize);
 
-        if (pg < 1)
-        {
-            pg = 1;
-        }
+        var pager = new PagerModel(characters.TotalRecords, page, pageSize);
+        pager.SortExpression = sortExpression;
+        this.ViewBag.Pager = pager;
 
-        recSkip = (pg - 1) * pgSize;
-
-        if (_service.validateDb())
-        {
-            var result = await _context.characterContext.ToListAsync();
-
-            switch (SortOrder)
-            {
-                case "Id_desc":
-                    result = result.OrderByDescending(c => c.Id).ToList();
-                    break;
-                case "Name":
-                    result = result.OrderBy(c => c.Name).ToList();
-                    break;
-                case "Name_desc":
-                    result = result.OrderByDescending(c => c.Name).ToList();
-                    break;
-                case "Favorite":
-                    result = result.OrderByDescending(c => c.Favorite).ToList();
-                    break;
-                case "Favorite_desc":
-                    result = result.OrderBy(c => c.Favorite).ToList();
-                    break;
-                default:
-                    result = result.OrderBy(c => c.Id).ToList();
-                    break;
-            }
-
-            recsCount = result.Count();
-
-            var pager = new Pager(recsCount, pg, pgSize);
-
-            var data = result.Skip(recSkip).Take(pager.PageSize).ToList();
-
-            this.ViewBag.Pager = pager;
-
-            return View(data);
-        }
-        else
-        {
-            var result = await _service.GetCharacters();
-
-            result = result.OrderBy(c => c.Name).ToList();
-
-            foreach (var character in result)
-            {
-                _service.SaveToDb(character);
-            }
-
-            recsCount = result.Count();
-
-            var pager = new Pager(recsCount, pg, pgSize);
-
-            var data = result.Skip(recSkip).Take(pager.PageSize).ToList();
-
-            this.ViewBag.Pager = pager;
-
-            return View(data);
-        }
+        return View(characters);
     }
 
-    [HttpGet("{name}")]
-    public async Task<IActionResult> SingleCharacter(string nameCharacter)
+    [HttpGet("/[controller]/{name}")]
+    public async Task<IActionResult> GetCharacter(string GetCharacter)
     {
-        if (nameCharacter == null)
+        if (GetCharacter == null)
         {
             return NotFound();
         }
 
-        if (_service.CharacterExists(nameCharacter))
+        if (_service.CharacterExists(GetCharacter))
         {
-            var character = _context.characterContext.FirstOrDefault(c => c.Name == nameCharacter);
+            var character = _context.characterContext.FirstOrDefault(c => c.Name == GetCharacter);
 
             List<Character> result = new List<Character>() { character };
 
@@ -117,13 +60,12 @@ public class CharactersController : Controller
         }
         else
         {
-            var result = await _service.GetCharacters(nameCharacter);
+            var result = await _service.GetCharacters(GetCharacter);
 
-            foreach (var character in result)
+            if (result == null)
             {
-                _service.SaveToDb(character);
+                return NotFound();
             }
-
             return View(result);
         }
     }
@@ -170,12 +112,15 @@ public class CharactersController : Controller
     [Route("/[controller]/edit/{id}")]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Modified,ResourceURI,Favorite")] Character character)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Modified,ResourceURI,Image,Favorite")] Character character)
     {
         if (id != character.Id)
         {
             return NotFound();
         }
+
+        if (character.Description == null)
+            character.Description = String.Empty;
 
         if (character.Favorite == true && !_service.ValidateFavorite())
         {

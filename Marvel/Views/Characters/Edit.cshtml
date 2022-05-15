@@ -34,6 +34,11 @@
                 <input asp-for="ResourceURI" class="form-control" />
                 <span asp-validation-for="ResourceURI" class="text-danger"></span>
             </div>
+            <div class="form-group">
+                <label asp-for="Image" class="control-label"></label>
+                <input asp-for="Image" class="form-control" />
+                <span asp-validation-for="Image" class="text-danger"></span>
+            </div>
             <div class="form-group form-check">
                 <label class="form-check-label">
                     <input class="form-check-input" asp-for="Favorite" /> @Html.DisplayNameFor(model => model.Favorite)
